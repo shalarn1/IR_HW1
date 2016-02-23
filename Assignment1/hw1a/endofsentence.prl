@@ -1,0 +1,166 @@
+#!/usr/local/bin/perl
+
+##########################################################
+##  EXAMPLE SHELL FOR END-OF-SENTENCE CLASSIFIER
+##
+##    examp4.prl < sent.data.train | more
+##  Accuracy: .964
+##  Suggestion: run in a wide window
+# 0.993145959899415
+##########################################################
+
+
+$L="./classes";
+
+my $SIZE = 15;
+my @success = (0) x $SIZE;  # Array of success counts indexed by rule, initialized with 0's
+my @failure = (0) x $SIZE;  # Array of failure counts indexed by rule, initialized with 0's
+my $line      = undef;   # used to store a line of input
+
+&initialize_set(*abbrevs,"$L/abbrevs"); 
+&initialize_set(*titles,"$L/titles"); 
+&initialize_set(*unlikely_proper_nouns,"$L/unlikely_proper_nouns"); 
+&initialize_set(*timeterms,"$L/timeterms"); 
+
+# Rule definitions
+#
+#    1) If the word immediately to the right begins with a lower case 
+#       letter than not an end of sentence
+#
+#    2) If the token immediately to the right is a paragraph indicator than
+#       is an end of sentence
+#
+#    3) If the token immediately to the right is a punctuation than not
+#       an end of sentence
+#
+#    4) If the token immediately to the left is a singular capital letter
+#       than not an end of sentence
+#
+#    5) If the token immediately to the left is a common title than not an
+#       end of sentence
+#
+#    6) If the token immediately to the left is a common abbreviation than
+#       not an end of sentence
+#
+#    7) If the word to the right is capitalized then is an end of sentence.
+#       This is the default state.
+#    8) If the token to the right is a number then NEOS
+#
+#    9) If word to the left has periods (is abbrev) in it then NEOS
+#
+#    10) If the next token is an end paranthesis and the previous token is capitalized, then NEOS.
+#
+#    11) If the next token is an end paranthesis, then EOS
+#
+#    12) If L1 is abbrev for figure (fig, figs, etc), then NEOS
+#
+#    13) If term to right is '', then EOS
+#
+#    14) If in numbered bullet form, NEOS
+#
+#    15) If L1 is not an abbreviation, then EOS
+#
+
+while (<>) {
+   @words = split(' ',$_);
+   ($class,$id,$L3,$L2,$L1,$C,$R1,$R2,$R3,$Llength,$Rlength,$Nspaces) = @words;
+ 
+   if    ($R1 =~ /^[a-z]/) { &ret(1,$class,$id,'NEOS');} # +1 is lower case
+   elsif ( $L1 =~ /^(\w\.)+/ ) { &ret(9, $class, $id, 'NEOS', $line); } #if -1 is abbrev
+   elsif ($R1 eq "<P>")    { &ret(2,$class,$id,'EOS');}  # +1 is new paragraph
+   elsif ( $R1 =~ /^[']+$/ ) { &ret(13, $class, $id, 'EOS', $line); }
+   elsif ($R1 =~ /^[,.?!'-]/)  { &ret(3,$class,$id,'NEOS');} # +1 is comma, period
+   elsif ($R1 =~ /^[0-9]/) { 
+      if ($R2 =~ /^[.]/) {
+        if((&classmember($L1,abbrevs))) 
+        { &ret( 14, $class, $id, 'NEOS', $line);}
+        else {&ret(15,$class,$id,'EOS')};
+      } # is a numbered bullet, etc.
+      elsif($L1 =~ /^fig/) { &ret(12, $class, $id, 'NEOS', $line); }
+      elsif ($L1 =~ /^[A-Z]/) {&ret(8,$class,$id,'NEOS');}  # +1 is number, etc.
+    }
+
+   elsif ($R1 =~/^[)]/){ 
+    if ($L1=~ /^[A-Z]$/){
+      &ret(10,$class,$id,'NEOS');
+    }
+    else {&ret(11,$class,$id,'EOS');}
+   }
+
+   elsif ($L1 =~ /^[A-Z]$/) {&ret( 4, $class, $id, 'NEOS', $line); } #single letter word is capital
+   
+   elsif ($R1 =~ /^[A-Z]/) {                             # +1 is capitalized 
+      if (&classmember($L1,titles))   { &ret(5,$class,$id,'NEOS');}  # Mr. Mrs.
+      elsif (&classmember($L1,abbrevs)) { &ret( 6, $class, $id, 'EOS', $line);}
+      else                            { &ret(7,$class,$id,'EOS');}   # default
+   }
+}
+
+# print rule analysis
+for my $i (0 .. $#success)
+{
+  if (defined $success[$i]) {
+    print "Rule ", $i+1 ," used\t", $success[$i] + $failure[$i], "\ttimes with\t", $success[$i]*100 / ($success[$i] + $failure[$i]), "% accuracy\n";
+  }
+}
+
+print "### HW1A shalarn1 - OVERALL CORRECT:",$correct," = ", $correct*100/($correct+$incorrect), "% ", 
+"\tINCORRECT: ",$incorrect," = ", $incorrect*100/ ($correct + $incorrect), "% \n";
+ 
+##########################################################
+## RET - prints full line for errors and keeps score
+##     - $where indicates the rule number responsible for the classification
+##
+##  This is a useful debugging tool, as after each change in
+##  the program one can identify the remaining misclassified
+##  training examples and the patterns responsible for them. 
+##########################################################
+ 
+sub ret {
+   local($where,$trueclass,$id,$givenclass) = @_;
+   
+   if ($trueclass eq $givenclass) {
+      print ".. (at ",$where,") -  ", $_;
+      $success[$where-1]++;
+      $correct++; 
+   }
+   else {
+      print "XX (at ",$where,") -  ", $_;
+      $failure[$where-1]++;
+      $incorrect++;
+   }
+   next;
+}
+
+
+##########################################################
+## CLASSMEMBER - tests for membership of $key in a given set
+##
+##  The \L in $set{"\L$key"} is a perl hack to convert a
+##  string into all lower case for lookup in a word array
+##  insensitive to the capitalization of the original key.
+##########################################################
+
+sub classmember{
+   local($key,*set) = @_;
+
+   return $set{"\L$key"};
+}
+
+##########################################################
+## INITIALIZE_SET - loads named associative array with set members   
+##########################################################
+
+sub initialize_set{
+   local(*set,$where) = @_;
+   
+    open (FILE,$where) || die "Can't open file $where: $!\n";
+
+    while (<FILE>) {
+        chop;
+        $set{$_} = 1;
+    }
+    close (FILE);
+}
+
+

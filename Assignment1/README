@@ -1,0 +1,42 @@
+Sarika Halarnakar - shalarn1
+CS466 Assignment 1
+Yarowsky
+2.23.16
+
+#Part 1
+
+Usage: perl endofsentence.prl < sent.data.train
+
+Results:
+
+Rule 1 used	499	times with	99.5991983967936% accuracy
+Rule 2 used	11617	times with	99.9827838512525% accuracy
+Rule 3 used	350	times with	97.7142857142857% accuracy
+Rule 4 used	1073	times with	92.9170549860205% accuracy
+Rule 5 used	1533	times with	99.6086105675147% accuracy
+Rule 6 used	260	times with	88.8461538461538% accuracy
+Rule 7 used	26972	times with	99.9295565771912% accuracy
+Rule 8 used	237	times with	97.8902953586498% accuracy
+Rule 9 used	316	times with	94.620253164557% accuracy
+Rule 10 used	2	times with	100% accuracy
+Rule 11 used	155	times with	86.4516129032258% accuracy
+Rule 12 used	15	times with	100% accuracy
+Rule 13 used	65	times with	86.1538461538462% accuracy
+Rule 14 used	67	times with	98.5074626865672% accuracy
+Rule 15 used	115	times with	99.1304347826087% accuracy
+### HW1A shalarn1 - OVERALL CORRECT:43080 = 99.5470930769942% 	INCORRECT: 196 = 0.452906923005823% 
+
+#Part 2
+
+Usage: perl classifysegment.prl < segment.data.train
+
+Rule 1 used	668	times with	99.7005988023952% accuracy
+Rule 2 used	1611	times with	99.9379267535692% accuracy
+Rule 3 used	65	times with	78.4615384615385% accuracy
+Rule 4 used	74	times with	64.8648648648649% accuracy
+Rule 5 used	280	times with	62.1428571428571% accuracy
+Rule 6 used	606	times with	99.009900990099% accuracy
+Rule 7 used	117	times with	94.8717948717949% accuracy
+Rule 8 used	70	times with	87.1428571428571% accuracy
+Rule 9 used	2401	times with	87.5468554768846% accuracy
+### HW1B shalarn1 - OVERALL CORRECT:5423 = 92.0400543109301% 	INCORRECT: 469 = 7.95994568906992% 
